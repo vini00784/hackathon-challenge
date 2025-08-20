@@ -3,6 +3,7 @@ package com.vini.hackathon.dto.response.solicitacao;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -15,7 +16,7 @@ public class SolicitacaoSimulacaoResponse {
 
     private String descricaoProduto;
 
-    private double taxaJuros;
+    private BigDecimal taxaJuros;
 
     private List<ResultadoSimulacaoDTO> resultadoSimulacaoDTO;
 
