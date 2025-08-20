@@ -9,4 +9,9 @@ public class ControllerResponse<T> {
 
     private T response;
 
+    public ControllerResponse<T> setResponse(T response) {
+        this.response = response;
+        return this;
+    }
+
 }
