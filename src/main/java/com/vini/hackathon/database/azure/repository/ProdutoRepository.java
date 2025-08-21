@@ -9,7 +9,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProdutoRepository extends JpaRepository<Produto, Integer> {
 
-    @Query("SELECT p FROM Produto p WHERE p.nuMinimoMeses <= :prazo AND p.nuMaximoMeses >= :prazo AND p.vrMinimo <= :valor AND p.vrMaximo >= :valor")
+    @Query("""
+        SELECT p FROM Produto p\s
+        WHERE p.nuMinimoMeses <= :prazo
+          AND (p.nuMaximoMeses IS NULL OR p.nuMaximoMeses >= :prazo)
+          AND p.vrMinimo <= :valor
+          AND (p.vrMaximo IS NULL OR p.vrMaximo >= :valor)
+   \s""")
     Produto buscarProduto(@Param("valor") double valor, @Param("prazo") int prazo);
 
 }
