@@ -1,5 +1,6 @@
 package com.vini.hackathon.database.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -11,7 +12,9 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.util.Properties;
 
+@Slf4j
 @Configuration
 public class LocalDataSourceConfig {
 
@@ -33,8 +36,15 @@ public class LocalDataSourceConfig {
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(localDataSource);
-        em.setPackagesToScan("com.vini.hackathon.database.local"); // <-- pacote das entidades do H2
+        em.setPackagesToScan("com.vini.hackathon.database.local.entity");
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+
+        Properties jpaProperties = new Properties();
+        jpaProperties.put("hibernate.hbm2ddl.auto", "update");
+        jpaProperties.put("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
+
+        em.setJpaProperties(jpaProperties);
+
         return em;
     }
 
