@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "Simulacao")
@@ -48,9 +49,14 @@ public class Simulacao {
 
     public Double getValorTotalParcelas() {
         return resultados.stream()
-                .flatMap(r -> r.getParcelas().stream())
-                .mapToDouble(Parcela::getValorPrestacao)
-                .sum();
+                .collect(Collectors.groupingBy(ResultadoSimulacao::getTipo))
+                .values().stream()
+                .map(resultadosPorTipo -> resultadosPorTipo.stream()
+                        .flatMap(r -> r.getParcelas().stream())
+                        .mapToDouble(Parcela::getValorPrestacao)
+                        .sum())
+                .min(Double::compare)
+                .orElse(0.0);
     }
 
 }
