@@ -2,8 +2,14 @@ package com.vini.hackathon.service;
 
 import com.vini.hackathon.database.azure.entity.Produto;
 import com.vini.hackathon.database.azure.repository.ProdutoRepository;
+import com.vini.hackathon.database.local.entity.Parcela;
+import com.vini.hackathon.database.local.entity.ResultadoSimulacao;
+import com.vini.hackathon.database.local.entity.Simulacao;
+import com.vini.hackathon.database.local.repository.SimulacaoRepository;
 import com.vini.hackathon.dto.ControllerResponse;
 import com.vini.hackathon.dto.request.SolicitacaoSimulacaoRequest;
+import com.vini.hackathon.dto.response.listagem.ListagemGeralSimulacoesResponse;
+import com.vini.hackathon.dto.response.listagem.RegistroDTO;
 import com.vini.hackathon.dto.response.solicitacao.ParcelaDTO;
 import com.vini.hackathon.dto.response.solicitacao.ResultadoSimulacaoDTO;
 import com.vini.hackathon.dto.response.solicitacao.SolicitacaoSimulacaoResponse;
@@ -11,11 +17,13 @@ import com.vini.hackathon.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -23,6 +31,7 @@ import java.util.List;
 public class AppService {
 
     private final ProdutoRepository produtoRepository;
+    private final SimulacaoRepository simulacaoRepository;
 
     public ControllerResponse<SolicitacaoSimulacaoResponse> solicitarSimulacaoCredito(SolicitacaoSimulacaoRequest req) throws BusinessException {
         Produto produtoEncontrado = produtoRepository.buscarProduto(req.getValorDesejado(), req.getPrazo());
@@ -32,10 +41,42 @@ public class AppService {
         }
 
         SolicitacaoSimulacaoResponse response = new SolicitacaoSimulacaoResponse();
+        response.setIdSimulacao(UUID.randomUUID());
         setDadosProduto(response, produtoEncontrado);
         setResultadoSimulacao(req, response, produtoEncontrado);
 
+        try {
+            Simulacao simulacao = mapToEntity(response, req);
+
+            simulacaoRepository.save(simulacao);
+        } catch (Exception e) {
+            throw new BusinessException("Erro ao persistir simulação");
+        }
+
         return new ControllerResponse<SolicitacaoSimulacaoResponse>().setResponse(response);
+    }
+
+    @Transactional("localTransactionManager")
+    public ControllerResponse<ListagemGeralSimulacoesResponse> listarSimulacoes() {
+        List<RegistroDTO> registros = simulacaoRepository.findAll()
+                .stream()
+                .map(sim -> {
+                    RegistroDTO dto = new RegistroDTO();
+                    dto.setIdSimulacao(sim.getIdSimulacao());
+                    dto.setValorDesejado(sim.getValorDesejado());
+                    dto.setPrazo(sim.getPrazo());
+                    dto.setValorTotalParcelas(sim.getValorTotalParcelas());
+                    return dto;
+                })
+                .toList();
+
+        ListagemGeralSimulacoesResponse response = new ListagemGeralSimulacoesResponse();
+        response.setPagina(1);
+        response.setQtdRegistros(registros.size());
+        response.setQtdRegistrosPagina(registros.size());
+        response.setRegistros(registros);
+
+        return new ControllerResponse<ListagemGeralSimulacoesResponse>().setResponse(response);
     }
 
     private void setDadosProduto(SolicitacaoSimulacaoResponse response, Produto produto) {
@@ -65,11 +106,12 @@ public class AppService {
 
             double saldoDevedor = req.getValorDesejado() - (amortizacao * (i - 1));
             BigDecimal valorJuros = BigDecimal.valueOf(saldoDevedor).multiply(produto.getPcTaxaJuros()).setScale(2, RoundingMode.DOWN);
+            double valorPrestacao = BigDecimal.valueOf(amortizacao + valorJuros.doubleValue()).setScale(2, RoundingMode.DOWN).doubleValue();
 
             parcela.setNumero(i);
             parcela.setValorAmortizacao(amortizacao);
             parcela.setValorJuros(valorJuros.doubleValue());
-            parcela.setValorPrestacao(amortizacao + valorJuros.doubleValue());
+            parcela.setValorPrestacao(valorPrestacao);
 
             parcelas.add(parcela);
         }
@@ -117,6 +159,43 @@ public class AppService {
         simulacaoPrice.setParcelas(parcelas);
 
         return simulacaoPrice;
+    }
+
+    private Simulacao mapToEntity(SolicitacaoSimulacaoResponse response, SolicitacaoSimulacaoRequest request) {
+        Simulacao simulacao = new Simulacao();
+        simulacao.setIdSimulacao(response.getIdSimulacao());
+        simulacao.setCodigoProduto(response.getCodigoProduto());
+        simulacao.setDescricaoProduto(response.getDescricaoProduto());
+        simulacao.setTaxaJuros(response.getTaxaJuros().doubleValue());
+        simulacao.setValorDesejado(request.getValorDesejado());
+        simulacao.setPrazo(request.getPrazo());
+
+        // Converter resultados
+        if (response.getResultadoSimulacaoDTO() != null) {
+            response.getResultadoSimulacaoDTO().forEach(resultadoDTO -> {
+                ResultadoSimulacao resultado = new ResultadoSimulacao();
+                resultado.setTipo(resultadoDTO.getTipo());
+                resultado.setSimulacao(simulacao);
+
+                // Converter parcelas
+                if (resultadoDTO.getParcelas() != null) {
+                    resultadoDTO.getParcelas().forEach(parcelaDTO -> {
+                        Parcela parcela = new Parcela();
+                        parcela.setNumero(parcelaDTO.getNumero());
+                        parcela.setValorAmortizacao(parcelaDTO.getValorAmortizacao());
+                        parcela.setValorJuros(parcelaDTO.getValorJuros());
+                        parcela.setValorPrestacao(parcelaDTO.getValorPrestacao());
+                        parcela.setResultadoSimulacao(resultado);
+
+                        resultado.getParcelas().add(parcela);
+                    });
+                }
+
+                simulacao.getResultados().add(resultado);
+            });
+        }
+
+        return simulacao;
     }
 
 }
