@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +40,7 @@ public class AppService {
         Produto produtoEncontrado = produtoRepository.buscarProduto(req.getValorDesejado(), req.getPrazo());
 
         if(produtoEncontrado == null) {
-            throw new BusinessException("Nenhum produto encontrado para os critérios informados");
+            throw new BusinessException("Nenhum produto encontrado para os critérios informados", HttpStatus.NOT_FOUND);
         }
 
         SolicitacaoSimulacaoResponse response = new SolicitacaoSimulacaoResponse();
@@ -54,7 +55,7 @@ public class AppService {
 
             simulacaoRepository.save(simulacao);
         } catch (Exception e) {
-            throw new BusinessException("Erro ao persistir simulação");
+            throw new BusinessException("Erro ao persistir simulação", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return new ControllerResponse<SolicitacaoSimulacaoResponse>().setResponse(response);
@@ -66,7 +67,7 @@ public class AppService {
         int qtdeTotalRegistros = (int) simulacaoRepository.count();
 
         if(qtdeTotalRegistros == 0) {
-            throw new BusinessException("Nenhuma simulação realizada");
+            throw new BusinessException("Nenhuma simulação realizada", HttpStatus.NOT_FOUND);
         }
 
         Pageable pageable = PageRequest.of(Integer.parseInt(pagina) - 1, 10);
@@ -83,7 +84,7 @@ public class AppService {
                 .toList();
 
         if(registros.isEmpty()) {
-            throw new BusinessException("Nenhum registro localizado na página " + pagina);
+            throw new BusinessException("Nenhum registro localizado na página " + pagina, HttpStatus.NOT_FOUND);
         }
 
         ListagemGeralSimulacoesResponse response = new ListagemGeralSimulacoesResponse();
