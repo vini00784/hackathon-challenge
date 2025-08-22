@@ -5,12 +5,13 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 public class SolicitacaoSimulacaoResponse {
 
-    private int idSimulacao;
+    private UUID idSimulacao;
 
     private int codigoProduto;
 
