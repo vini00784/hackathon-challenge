@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.vini.hackathon.utils.DecimalUtils.roundValue;
+
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -78,7 +80,7 @@ public class AppService {
                     dto.setIdSimulacao(sim.getIdSimulacao());
                     dto.setValorDesejado(sim.getValorDesejado());
                     dto.setPrazo(sim.getPrazo());
-                    dto.setValorTotalParcelas(sim.getValorTotalParcelas());
+                    dto.setValorTotalParcelas(roundValue(sim.getValorTotalParcelas()).doubleValue());
                     return dto;
                 })
                 .toList();
@@ -122,8 +124,8 @@ public class AppService {
             ParcelaDTO parcela = new ParcelaDTO();
 
             double saldoDevedor = req.getValorDesejado() - (amortizacao * (i - 1));
-            BigDecimal valorJuros = BigDecimal.valueOf(saldoDevedor).multiply(produto.getPcTaxaJuros()).setScale(2, RoundingMode.DOWN);
-            double valorPrestacao = BigDecimal.valueOf(amortizacao + valorJuros.doubleValue()).setScale(2, RoundingMode.DOWN).doubleValue();
+            BigDecimal valorJuros = roundValue(saldoDevedor).multiply(produto.getPcTaxaJuros());
+            double valorPrestacao = roundValue(amortizacao + valorJuros.doubleValue()).doubleValue();
 
             parcela.setNumero(i);
             parcela.setValorAmortizacao(amortizacao);
@@ -155,13 +157,13 @@ public class AppService {
         for(int i = 1; i <= req.getPrazo(); i++) {
             ParcelaDTO parcela = new ParcelaDTO();
 
-            double valorFinalFormatado = BigDecimal.valueOf(valorPrestacao).setScale(2, RoundingMode.DOWN).doubleValue();
+            double valorFinalFormatado = roundValue(valorPrestacao).doubleValue();
 
             double valorJuros = saldoDevedor * produto.getPcTaxaJuros().doubleValue();
-            valorJuros = BigDecimal.valueOf(valorJuros).setScale(2, RoundingMode.DOWN).doubleValue();
+            valorJuros = roundValue(valorJuros).doubleValue();
 
             double amortizacao = valorPrestacao - valorJuros;
-            amortizacao = BigDecimal.valueOf(amortizacao).setScale(2, RoundingMode.DOWN).doubleValue();
+            amortizacao = roundValue(amortizacao).doubleValue();
 
             saldoDevedor -= amortizacao;
 
