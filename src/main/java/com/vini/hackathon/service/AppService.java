@@ -16,6 +16,8 @@ import com.vini.hackathon.dto.response.solicitacao.SolicitacaoSimulacaoResponse;
 import com.vini.hackathon.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +47,8 @@ public class AppService {
         setDadosProduto(response, produtoEncontrado);
         setResultadoSimulacao(req, response, produtoEncontrado);
 
+        // TODO: Enviar simuacao para o eventHub
+
         try {
             Simulacao simulacao = mapToEntity(response, req);
 
@@ -57,8 +61,16 @@ public class AppService {
     }
 
     @Transactional("localTransactionManager")
-    public ControllerResponse<ListagemGeralSimulacoesResponse> listarSimulacoes() {
-        List<RegistroDTO> registros = simulacaoRepository.findAll()
+    public ControllerResponse<ListagemGeralSimulacoesResponse> listarSimulacoes(String pagina) {
+
+        int qtdeTotalRegistros = (int) simulacaoRepository.count();
+
+        if(qtdeTotalRegistros == 0) {
+            throw new BusinessException("Nenhuma simulação realizada");
+        }
+
+        Pageable pageable = PageRequest.of(Integer.parseInt(pagina) - 1, 10);
+        List<RegistroDTO> registros = simulacaoRepository.findAll(pageable)
                 .stream()
                 .map(sim -> {
                     RegistroDTO dto = new RegistroDTO();
@@ -70,9 +82,13 @@ public class AppService {
                 })
                 .toList();
 
+        if(registros.isEmpty()) {
+            throw new BusinessException("Nenhum registro localizado na página " + pagina);
+        }
+
         ListagemGeralSimulacoesResponse response = new ListagemGeralSimulacoesResponse();
-        response.setPagina(1);
-        response.setQtdRegistros(registros.size());
+        response.setPagina(Integer.parseInt(pagina));
+        response.setQtdRegistros(qtdeTotalRegistros);
         response.setQtdRegistrosPagina(registros.size());
         response.setRegistros(registros);
 

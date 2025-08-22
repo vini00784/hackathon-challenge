@@ -1,5 +1,6 @@
 package com.vini.hackathon.controller;
 
+import com.vini.hackathon.controller.definition.AppControllerDef;
 import com.vini.hackathon.dto.ControllerResponse;
 import com.vini.hackathon.dto.request.SolicitacaoSimulacaoRequest;
 import com.vini.hackathon.dto.response.listagem.ListagemGeralSimulacoesResponse;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1")
-public class AppController {
+public class AppController implements AppControllerDef {
 
     private final AppService appService;
 
@@ -27,9 +28,9 @@ public class AppController {
         return ResponseEntity.ok(appService.solicitarSimulacaoCredito(solicitacaoSimulacaoRequest));
     }
 
-    @GetMapping( value = "/simulacoes", produces = MediaType.APPLICATION_JSON_VALUE )
-    public ResponseEntity<ControllerResponse<ListagemGeralSimulacoesResponse>> listarSimulacoes() throws BusinessException {
-        return ResponseEntity.ok(appService.listarSimulacoes());
+    @GetMapping( value = "/simulacoes/pagina/{pagina}", produces = MediaType.APPLICATION_JSON_VALUE )
+    public ResponseEntity<ControllerResponse<ListagemGeralSimulacoesResponse>> listarSimulacoes(@PathVariable("pagina") String pagina) throws BusinessException {
+        return ResponseEntity.ok(appService.listarSimulacoes(pagina));
     }
 
 }
