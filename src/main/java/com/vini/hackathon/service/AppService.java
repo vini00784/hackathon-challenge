@@ -16,6 +16,7 @@ import com.vini.hackathon.dto.response.solicitacao.SolicitacaoSimulacaoResponse;
 import com.vini.hackathon.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -35,8 +36,11 @@ import static com.vini.hackathon.utils.DecimalUtils.roundValue;
 @AllArgsConstructor
 public class AppService {
 
-    private final ProdutoRepository produtoRepository;
-    private final SimulacaoRepository simulacaoRepository;
+    @Autowired
+    private ProdutoRepository produtoRepository;
+
+    @Autowired
+    private SimulacaoRepository simulacaoRepository;
 
     public ControllerResponse<SolicitacaoSimulacaoResponse> solicitarSimulacaoCredito(SolicitacaoSimulacaoRequest req) throws BusinessException {
         Produto produtoEncontrado = produtoRepository.buscarProduto(req.getValorDesejado(), req.getPrazo());
