@@ -42,7 +42,7 @@ public class AppService {
     @Autowired
     private SimulacaoRepository simulacaoRepository;
 
-    public ControllerResponse<SolicitacaoSimulacaoResponse> solicitarSimulacaoCredito(SolicitacaoSimulacaoRequest req) throws BusinessException {
+    public ControllerResponse<SolicitacaoSimulacaoResponse> solicitarSimulacaoCredito(SolicitacaoSimulacaoRequest req) {
         Produto produtoEncontrado = produtoRepository.buscarProduto(req.getValorDesejado(), req.getPrazo());
 
         if(produtoEncontrado == null) {
