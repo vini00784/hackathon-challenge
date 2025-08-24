@@ -34,7 +34,7 @@ import static com.vini.hackathon.utils.DecimalUtils.roundValue;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class AppService {
+public class SimulacaoService {
 
     @Autowired
     private ProdutoRepository produtoRepository;

@@ -5,7 +5,7 @@ import com.vini.hackathon.dto.ControllerResponse;
 import com.vini.hackathon.dto.request.SolicitacaoSimulacaoRequest;
 import com.vini.hackathon.dto.response.listagem.ListagemGeralSimulacoesResponse;
 import com.vini.hackathon.dto.response.solicitacao.SolicitacaoSimulacaoResponse;
-import com.vini.hackathon.service.AppService;
+import com.vini.hackathon.service.SimulacaoService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,16 +20,16 @@ import org.springframework.web.bind.annotation.*;
 public class SimulacaoController implements SimulacaoControllerDef {
 
     @Autowired
-    private AppService appService;
+    private SimulacaoService simulacaoService;
 
     @PostMapping( value = "/realizar-simulacao", produces = MediaType.APPLICATION_JSON_VALUE )
     public ResponseEntity<ControllerResponse<SolicitacaoSimulacaoResponse>> realizarSimulacao(@RequestBody SolicitacaoSimulacaoRequest solicitacaoSimulacaoRequest) {
-        return ResponseEntity.ok(appService.solicitarSimulacaoCredito(solicitacaoSimulacaoRequest));
+        return ResponseEntity.ok(simulacaoService.solicitarSimulacaoCredito(solicitacaoSimulacaoRequest));
     }
 
     @GetMapping( value = "/simulacoes/pagina/{pagina}", produces = MediaType.APPLICATION_JSON_VALUE )
     public ResponseEntity<ControllerResponse<ListagemGeralSimulacoesResponse>>  listarSimulacoes(@PathVariable("pagina") String pagina) {
-        return ResponseEntity.ok(appService.listarSimulacoes(pagina));
+        return ResponseEntity.ok(simulacaoService.listarSimulacoes(pagina));
     }
 
 }
