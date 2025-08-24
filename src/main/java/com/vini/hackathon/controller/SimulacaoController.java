@@ -1,6 +1,6 @@
 package com.vini.hackathon.controller;
 
-import com.vini.hackathon.controller.definition.AppControllerDef;
+import com.vini.hackathon.controller.definition.SimulacaoControllerDef;
 import com.vini.hackathon.dto.ControllerResponse;
 import com.vini.hackathon.dto.request.SolicitacaoSimulacaoRequest;
 import com.vini.hackathon.dto.response.listagem.ListagemGeralSimulacoesResponse;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1")
 @AllArgsConstructor
-public class AppController implements AppControllerDef {
+public class SimulacaoController implements SimulacaoControllerDef {
 
     @Autowired
     private AppService appService;
