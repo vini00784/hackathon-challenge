@@ -42,6 +42,9 @@ public class SimulacaoService {
     @Autowired
     private SimulacaoRepository simulacaoRepository;
 
+    @Autowired
+    private EventService eventService;
+
     public ControllerResponse<SolicitacaoSimulacaoResponse> solicitarSimulacaoCredito(SolicitacaoSimulacaoRequest req) {
         Produto produtoEncontrado = produtoRepository.buscarProduto(req.getValorDesejado(), req.getPrazo());
 
@@ -54,8 +57,6 @@ public class SimulacaoService {
         setDadosProduto(response, produtoEncontrado);
         setResultadoSimulacao(req, response, produtoEncontrado);
 
-        // TODO: Enviar simuacao para o eventHub
-
         try {
             Simulacao simulacao = mapToEntity(response, req);
 
@@ -63,6 +64,8 @@ public class SimulacaoService {
         } catch (Exception e) {
             throw new BusinessException("Erro ao persistir simulação", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        eventService.enviar(response);
 
         return new ControllerResponse<SolicitacaoSimulacaoResponse>().setResponse(response);
     }
