@@ -10,7 +10,6 @@ import com.vini.hackathon.dto.ControllerResponse;
 import com.vini.hackathon.dto.request.SolicitacaoSimulacaoRequest;
 import com.vini.hackathon.dto.response.listagem.ListagemGeralSimulacoesResponse;
 import com.vini.hackathon.dto.response.listagem.RegistroDTO;
-import com.vini.hackathon.dto.response.solicitacao.ParcelaDTO;
 import com.vini.hackathon.dto.response.solicitacao.ResultadoSimulacaoDTO;
 import com.vini.hackathon.dto.response.solicitacao.SolicitacaoSimulacaoResponse;
 import com.vini.hackathon.exception.BusinessException;
@@ -23,12 +22,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.vini.hackathon.utils.Calculadora.calculadoraPrice;
+import static com.vini.hackathon.utils.Calculadora.calculadoraSac;
 import static com.vini.hackathon.utils.DecimalUtils.roundValue;
 
 @Slf4j
@@ -111,77 +111,10 @@ public class AppService {
     private void setResultadoSimulacao(SolicitacaoSimulacaoRequest req, SolicitacaoSimulacaoResponse response, Produto produto) {
         List<ResultadoSimulacaoDTO> resultado = new ArrayList<>();
 
-        resultado.add(setSimulacaoSac(req, produto));
-        resultado.add(setSimulacaoPrice(req, produto));
+        resultado.add(calculadoraSac(req, produto));
+        resultado.add(calculadoraPrice(req, produto));
 
         response.setResultadoSimulacaoDTO(resultado);
-    }
-
-    private ResultadoSimulacaoDTO setSimulacaoSac(SolicitacaoSimulacaoRequest req, Produto produto) {
-        ResultadoSimulacaoDTO simulacaoSac = new ResultadoSimulacaoDTO();
-        simulacaoSac.setTipo("SAC");
-
-        List<ParcelaDTO> parcelas = new ArrayList<>();
-        double amortizacao = req.getValorDesejado() / req.getPrazo();
-
-        for(int i = 1; i <= req.getPrazo(); i++) {
-            ParcelaDTO parcela = new ParcelaDTO();
-
-            double saldoDevedor = req.getValorDesejado() - (amortizacao * (i - 1));
-            BigDecimal valorJuros = roundValue(saldoDevedor).multiply(produto.getPcTaxaJuros());
-            double valorPrestacao = roundValue(amortizacao + valorJuros.doubleValue()).doubleValue();
-
-            parcela.setNumero(i);
-            parcela.setValorAmortizacao(amortizacao);
-            parcela.setValorJuros(valorJuros.doubleValue());
-            parcela.setValorPrestacao(valorPrestacao);
-
-            parcelas.add(parcela);
-        }
-
-        simulacaoSac.setParcelas(parcelas);
-
-        return simulacaoSac;
-    }
-
-    private ResultadoSimulacaoDTO setSimulacaoPrice(SolicitacaoSimulacaoRequest req, Produto produto) {
-        ResultadoSimulacaoDTO simulacaoPrice = new ResultadoSimulacaoDTO();
-        simulacaoPrice.setTipo("PRICE");
-
-        List<ParcelaDTO> parcelas = new ArrayList<>();
-
-        double valorFinanciado = req.getValorDesejado();
-        double taxaJuros = produto.getPcTaxaJuros().doubleValue();
-        double prazo = req.getPrazo();
-
-        double valorPrestacao = valorFinanciado * taxaJuros / (1 - Math.pow(1 + taxaJuros, -prazo));
-
-        double saldoDevedor = valorFinanciado;
-
-        for(int i = 1; i <= req.getPrazo(); i++) {
-            ParcelaDTO parcela = new ParcelaDTO();
-
-            double valorFinalFormatado = roundValue(valorPrestacao).doubleValue();
-
-            double valorJuros = saldoDevedor * produto.getPcTaxaJuros().doubleValue();
-            valorJuros = roundValue(valorJuros).doubleValue();
-
-            double amortizacao = valorPrestacao - valorJuros;
-            amortizacao = roundValue(amortizacao).doubleValue();
-
-            saldoDevedor -= amortizacao;
-
-            parcela.setNumero(i);
-            parcela.setValorAmortizacao(amortizacao);
-            parcela.setValorJuros(valorJuros);
-            parcela.setValorPrestacao(valorFinalFormatado);
-
-            parcelas.add(parcela);
-        }
-
-        simulacaoPrice.setParcelas(parcelas);
-
-        return simulacaoPrice;
     }
 
     private Simulacao mapToEntity(SolicitacaoSimulacaoResponse response, SolicitacaoSimulacaoRequest request) {
