@@ -7,9 +7,12 @@ import com.vini.hackathon.database.local.entity.ResultadoSimulacao;
 import com.vini.hackathon.database.local.entity.Simulacao;
 import com.vini.hackathon.database.local.repository.SimulacaoRepository;
 import com.vini.hackathon.dto.ControllerResponse;
+import com.vini.hackathon.dto.request.ListagemSimulacaoPorDataEProdRequest;
 import com.vini.hackathon.dto.request.SolicitacaoSimulacaoRequest;
+import com.vini.hackathon.dto.response.listagem.ListagemEspecificaSimulacoesResponse;
 import com.vini.hackathon.dto.response.listagem.ListagemGeralSimulacoesResponse;
 import com.vini.hackathon.dto.response.listagem.RegistroDTO;
+import com.vini.hackathon.dto.response.listagem.SimulacaoDTO;
 import com.vini.hackathon.dto.response.solicitacao.ResultadoSimulacaoDTO;
 import com.vini.hackathon.dto.response.solicitacao.SolicitacaoSimulacaoResponse;
 import com.vini.hackathon.exception.BusinessException;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -103,6 +107,47 @@ public class SimulacaoService {
         response.setRegistros(registros);
 
         return new ControllerResponse<ListagemGeralSimulacoesResponse>().setResponse(response);
+    }
+
+    @Transactional("localTransactionManager")
+    public ControllerResponse<ListagemEspecificaSimulacoesResponse> listarSimulacoesPorDataEProduto(ListagemSimulacaoPorDataEProdRequest req) {
+        ListagemEspecificaSimulacoesResponse response = new ListagemEspecificaSimulacoesResponse();
+        LocalDate dataReferencia = LocalDate.parse(req.getDataReferencia());
+        response.setDataReferencia(dataReferencia);
+
+        boolean produtoEncontrado = produtoRepository.findById(req.getCodigoProduto()).isEmpty();
+
+        if(produtoEncontrado) {
+            throw new BusinessException("O produto informado não existe", HttpStatus.NOT_FOUND);
+        }
+
+        List<Simulacao> simulacoes = simulacaoRepository.listarPorDataEProduto(req.getCodigoProduto(), dataReferencia);
+
+        if(simulacoes.isEmpty()) {
+            throw new BusinessException("Nenhuma simulação encontrada para o produto " + req.getCodigoProduto(), HttpStatus.NOT_FOUND);
+        }
+
+        SimulacaoDTO dto = new SimulacaoDTO();
+        dto.setCodigoProduto(req.getCodigoProduto());
+        dto.setDescricaoProduto(simulacoes.get(0).getDescricaoProduto());
+
+        // Cálculos
+
+        // TODO: Revisar os cálculos abaixo
+        double taxaMediaJuro = simulacoes.stream().mapToDouble(Simulacao::getTaxaJuros).average().orElse(0);
+        dto.setTaxaMediaJuro(roundValue(taxaMediaJuro).doubleValue());
+
+        double valorMedioPrestacao = simulacoes.stream().mapToDouble(Simulacao::getValorMedioPrestacao).average().orElse(0.0);
+        dto.setValorMedioPrestacao(roundValue(valorMedioPrestacao).doubleValue());
+
+        double valorTotalDesejado = simulacoes.stream().mapToDouble(Simulacao::getValorDesejado).sum();
+        dto.setValorTotalDesejado(roundValue(valorTotalDesejado).doubleValue());
+
+//        double valorTotalCredito = simulacoes.stream().mapToDouble(Simulacao::getValorCredito).sum();
+
+        response.setSimulacoes(List.of(dto));
+
+        return new ControllerResponse<ListagemEspecificaSimulacoesResponse>().setResponse(response);
     }
 
     private void setDadosProduto(SolicitacaoSimulacaoResponse response, Produto produto) {
