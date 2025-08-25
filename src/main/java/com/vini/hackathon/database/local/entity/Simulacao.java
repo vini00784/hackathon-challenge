@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -37,14 +37,14 @@ public class Simulacao {
     private Integer prazo;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @OneToMany(mappedBy = "simulacao", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ResultadoSimulacao> resultados = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = LocalDate.now();
     }
 
     public Double getValorTotalParcelas() {
@@ -56,6 +56,14 @@ public class Simulacao {
                         .mapToDouble(Parcela::getValorPrestacao)
                         .sum())
                 .min(Double::compare)
+                .orElse(0.0);
+    }
+
+    public Double getValorMedioPrestacao() {
+        return resultados.stream()
+                .flatMap(r -> r.getParcelas().stream())
+                .mapToDouble(Parcela::getValorPrestacao)
+                .average()
                 .orElse(0.0);
     }
 
