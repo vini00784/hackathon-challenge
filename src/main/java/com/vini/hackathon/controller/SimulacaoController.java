@@ -2,7 +2,9 @@ package com.vini.hackathon.controller;
 
 import com.vini.hackathon.controller.definition.SimulacaoControllerDef;
 import com.vini.hackathon.dto.ControllerResponse;
+import com.vini.hackathon.dto.request.ListagemSimulacaoPorDataEProdRequest;
 import com.vini.hackathon.dto.request.SolicitacaoSimulacaoRequest;
+import com.vini.hackathon.dto.response.listagem.ListagemEspecificaSimulacoesResponse;
 import com.vini.hackathon.dto.response.listagem.ListagemGeralSimulacoesResponse;
 import com.vini.hackathon.dto.response.solicitacao.SolicitacaoSimulacaoResponse;
 import com.vini.hackathon.service.SimulacaoService;
@@ -30,6 +32,11 @@ public class SimulacaoController implements SimulacaoControllerDef {
     @GetMapping( value = "/simulacoes/pagina/{pagina}", produces = MediaType.APPLICATION_JSON_VALUE )
     public ResponseEntity<ControllerResponse<ListagemGeralSimulacoesResponse>>  listarSimulacoes(@PathVariable("pagina") String pagina) {
         return ResponseEntity.ok(simulacaoService.listarSimulacoes(pagina));
+    }
+
+    @PostMapping( value = "/simulacoes-data-produto", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ControllerResponse<ListagemEspecificaSimulacoesResponse>> listarSimulacoesPorDataEProduto(@RequestBody ListagemSimulacaoPorDataEProdRequest listagemSimulacaoPorDataEProdRequest) {
+        return ResponseEntity.ok(simulacaoService.listarSimulacoesPorDataEProduto(listagemSimulacaoPorDataEProdRequest));
     }
 
 }
